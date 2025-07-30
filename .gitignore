@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+# Ignore all files in data/spat_files
+data/spat_files/*
+
+# But keep the folder itself
+!data/spat_files/.gitkeep
