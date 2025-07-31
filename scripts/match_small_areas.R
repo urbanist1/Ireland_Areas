@@ -10,6 +10,8 @@ library(here)
 rm(list = ls())
 
 data_dir <- here("data", "spat_files")
+
+output_dir <- here("output")
 dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
 
 # ---- Download GeoJSON Files (Small Areas 2016 & 2022) ----
@@ -45,16 +47,16 @@ d_22 <- st_transform(d_22, crs = 3035)
 d_16 <- st_make_valid(d_16)
 d_22 <- st_make_valid(d_22)
 
-# Save cleaned shapefiles
-st_write(d_16, file.path(data_dir, "sa16_clean.geojson"), append = FALSE, driver = "ESRI Shapefile")
-st_write(d_22, file.path(data_dir, "sa22_clean.geojson"), append = FALSE, driver = "ESRI Shapefile")
+# Save cleaned GeoJSON files (preserving full field names)
+st_write(d_16, file.path(data_dir, "sa16_clean.geojson"), append = FALSE, driver = "GeoJSON")
+st_write(d_22, file.path(data_dir, "sa22_clean.geojson"), append = FALSE, driver = "GeoJSON")
 
 # ---- Prepare Geometry and Area Calculations ----
 d_16 <- d_16["GUID"]
 colnames(d_16)[1] <- "guid_16"
 d_16$area_16 <- as.numeric(st_area(d_16))
 
-d_22 <- d_22["GUID"]
+d_22 <- d_22["SA_GUID_2022"]
 colnames(d_22)[1] <- "guid_22"
 d_22$area_22 <- as.numeric(st_area(d_22))
 
@@ -101,13 +103,12 @@ dissolved <- grid_22 %>%
   group_by(agg_key) %>%
   summarise(geometry = st_union(geometry), .groups = "drop")
 
-# ---- Save All Output Files into spat_files ----
-st_write(dissolved, file.path(data_dir, "ire_common_16_22.shp"), append = FALSE)
-st_write(d_16, file.path(data_dir, "ire_sa_16.shp"), append = FALSE)
-st_write(d_22, file.path(data_dir, "ire_sa_22.shp"), append = FALSE)
+# ---- Save Final Outputs (GeoJSON + CSV) ----
+st_write(dissolved, file.path(data_dir, "ire_common_16_22.geojson"), append = FALSE, driver = "GeoJSON")
+st_write(d_16, file.path(data_dir, "ire_sa_16.geojson"), append = FALSE, driver = "GeoJSON")
+st_write(d_22, file.path(data_dir, "ire_sa_22.geojson"), append = FALSE, driver = "GeoJSON")
 
-write.csv(key16, file.path(data_dir, "key16.csv"), row.names = FALSE)
-write.csv(key22, file.path(data_dir, "key22.csv"), row.names = FALSE)
+write.csv(key16, file.path(output_dir, "key16.csv"), row.names = FALSE)
+write.csv(key22, file.path(output_dir, "key22.csv"), row.names = FALSE)
 
-message("✅ All outputs saved to data/spat_files/")
-
+message("✅ All outputs saved to data/spat_files/ in GeoJSON format")
